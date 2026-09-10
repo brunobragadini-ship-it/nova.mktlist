@@ -42,7 +42,7 @@
         }
 
         .app-logo {
-            height: 85px; /* Aumentado para dar destaque e legibilidade ideal */
+            height: 85px;
             width: auto;
             object-fit: contain;
         }
@@ -112,6 +112,12 @@
             font-weight: 500;
         }
 
+        .item-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
         .item-row-bottom {
             display: flex;
             align-items: center;
@@ -157,10 +163,11 @@
             border: none;
             cursor: pointer;
             font-size: 0.85rem;
-            padding: 4px 8px;
+            padding: 4px 6px;
             border-radius: 4px;
         }
 
+        .btn-move { color: #f1c40f; }
         .btn-delete { color: var(--danger-color); }
         .btn-edit { color: #4da6ff; }
 
@@ -369,15 +376,14 @@
             itemList.innerHTML = '';
             let valorTotalGeral = 0;
 
-            items.forEach(item => {
+            items.forEach((item, index) => {
                 const isChecked = item.checked === true || item.checked === "TRUE" || item.checked === "true";
                 const qty = parseFloat(item.qty) || 0;
                 const price = parseFloat(item.price) || 0;
                 const subtotal = qty * price;
 
-                if (!isChecked) {
-                    valorTotalGeral += subtotal;
-                }
+                // Agora o subtotal de todos os itens é somado no total geral, mesmo quando checados
+                valorTotalGeral += subtotal;
 
                 const li = document.createElement('li');
                 li.className = `list-item ${isChecked ? 'checked' : ''}`;
@@ -386,6 +392,8 @@
                         <input type="checkbox" class="item-check" ${isChecked ? 'checked' : ''}>
                         <span class="item-name">${item.name}</span>
                         <div class="item-actions">
+                            <button class="btn-action btn-move btn-up" title="Mover para cima">▲</button>
+                            <button class="btn-action btn-move btn-down" title="Mover para baixo">▼</button>
                             <button class="btn-action btn-edit">Editar</button>
                             <button class="btn-action btn-delete">Excluir</button>
                         </div>
@@ -401,6 +409,26 @@
                     item.checked = checkbox.checked;
                     renderizarLista(listaCache);
                     enviarRequisicao({ action: "update", id: item.id, name: item.name, qty: item.qty, price: item.price, checked: checkbox.checked });
+                });
+
+                // Mover para cima
+                li.querySelector('.btn-up').addEventListener('click', () => {
+                    if (index > 0) {
+                        const temp = listaCache[index];
+                        listaCache[index] = listaCache[index - 1];
+                        listaCache[index - 1] = temp;
+                        renderizarLista(listaCache);
+                    }
+                });
+
+                // Mover para baixo
+                li.querySelector('.btn-down').addEventListener('click', () => {
+                    if (index < listaCache.length - 1) {
+                        const temp = listaCache[index];
+                        listaCache[index] = listaCache[index + 1];
+                        listaCache[index + 1] = temp;
+                        renderizarLista(listaCache);
+                    }
                 });
 
                 li.querySelector('.btn-delete').addEventListener('click', () => {
@@ -490,7 +518,7 @@
 
             fetch(WEB_APP_URL, {
                 method: 'POST',
-                    mode: 'no-cors',
+                mode: 'no-cors',
                 body: formData
             }).then(() => {
                 syncStatus.textContent = "🟢";
