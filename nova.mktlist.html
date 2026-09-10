@@ -30,9 +30,21 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 20px;
+            padding: 12px 20px;
             border-bottom: 1px solid var(--border-color);
             background-color: rgba(0,0,0,0.8);
+        }
+
+        .logo-title-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .app-logo {
+            height: 32px;
+            width: auto;
+            object-fit: contain;
         }
 
         header h1 {
@@ -248,7 +260,10 @@
 <body>
 
     <header>
-        <h1>nova.MKTLIST</h1>
+        <div class="logo-title-container">
+            <img src="MKTLIST-removebg-preview.png" alt="Logo" class="app-logo">
+            <h1>nova.MKTLIST</h1>
+        </div>
         <div class="sync-status" id="syncStatus">Sincronizado</div>
     </header>
 
