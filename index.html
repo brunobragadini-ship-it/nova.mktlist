@@ -24,6 +24,7 @@
             flex-direction: column;
             height: 100vh;
             box-sizing: border-box;
+            overscroll-behavior-y: none;
         }
 
         header {
@@ -33,28 +34,29 @@
             padding: 10px 15px;
             border-bottom: 1px solid var(--border-color);
             background-color: rgba(0,0,0,0.8);
-            gap: 10px;
+            gap: 8px;
         }
 
         .logo-title-container {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             overflow: hidden;
+            flex: 1;
         }
 
         .app-logo {
-            height: 55px;
+            height: 45px;
             width: auto;
             object-fit: contain;
             flex-shrink: 0;
         }
 
         .header-title {
-            font-size: 1.1rem;
+            font-size: 0.85rem;
             font-weight: bold;
             color: var(--text-color);
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
             text-transform: uppercase;
             white-space: nowrap;
             overflow: hidden;
@@ -62,7 +64,7 @@
         }
 
         .sync-status {
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: var(--secondary-text-color);
             flex-shrink: 0;
         }
@@ -107,7 +109,8 @@
             border-radius: 8px;
             cursor: grab;
             user-select: none;
-            transition: transform 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
+            touch-action: pan-y;
+            transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
         }
 
         .list-item:active {
@@ -115,11 +118,24 @@
         }
 
         .list-item.dragging {
-            opacity: 0.5;
+            opacity: 0.4;
             background: #1a1a2e;
             border-color: var(--primary-color);
-            box-shadow: 0 8px 20px rgba(106, 90, 205, 0.3);
-            transform: scale(1.02);
+        }
+
+        /* Estilo do elemento flutuante arrastado por toque no celular */
+        .drag-clone {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.9;
+            background: #1a1a2e;
+            border: 1px solid var(--primary-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(106, 90, 205, 0.4);
+            box-sizing: border-box;
+            transform: scale(1.03);
+            transition: none !important;
         }
 
         .item-row-top {
@@ -309,7 +325,7 @@
         <span class="total-value" id="totalCompra">R$ 0,00</span>
     </div>
 
-    <main>
+    <main id="mainContainer">
         <ul class="item-list" id="itemList"></ul>
     </main>
 
@@ -434,6 +450,7 @@
                     </div>
                 `;
 
+                // --- COMPUTADOR (Drag and Drop HTML5) ---
                 li.addEventListener('dragstart', (e) => {
                     draggedIndex = index;
                     setTimeout(() => li.classList.add('dragging'), 0);
@@ -454,6 +471,64 @@
                         const movedItem = listaCache.splice(draggedIndex, 1)[0];
                         listaCache.splice(index, 0, movedItem);
                         draggedIndex = index;
+                        renderizarLista(listaCache);
+                    }
+                });
+
+                // --- CELULAR (Touch Events para Mobile) ---
+                let clone = null;
+                let startY = 0;
+                let initialY = 0;
+
+                li.addEventListener('touchstart', (e) => {
+                    // Não ativa se tocar nos botões, inputs ou checkbox
+                    if (e.target.closest('button') || e.target.closest('input')) return;
+                    
+                    draggedIndex = index;
+                    startY = e.touches[0].clientY;
+                    initialY = li.getBoundingClientRect().top;
+                    
+                    li.classList.add('dragging');
+
+                    // Cria um elemento visual flutuante para acompanhar o dedo
+                    clone = li.cloneNode(true);
+                    clone.className = 'list-clone drag-clone';
+                    clone.style.width = `${li.offsetWidth}px`;
+                    clone.style.left = `${li.getBoundingClientRect().left}px`;
+                    clone.style.top = `${initialY}px`;
+                    document.body.appendChild(clone);
+                }, { passive: true });
+
+                li.addEventListener('touchmove', (e) => {
+                    if (draggedIndex === null || !clone) return;
+                    
+                    const currentY = e.touches[0].clientY;
+                    const deltaY = currentY - startY;
+                    clone.style.top = `${initialY + deltaY}px`;
+
+                    // Descobre em cima de qual elemento o dedo está passando
+                    const elemBelow = document.elementFromPoint(window.innerWidth / 2, currentY);
+                    const targetLi = elemBelow ? elemBelow.closest('.list-item') : null;
+
+                    if (targetLi && targetLi !== li) {
+                        const targetIndex = parseInt(targetLi.dataset.index);
+                        if (!isNaN(targetIndex) && targetIndex !== draggedIndex) {
+                            const movedItem = listaCache.splice(draggedIndex, 1)[0];
+                            listaCache.splice(targetIndex, 0, movedItem);
+                            draggedIndex = targetIndex;
+                            renderizarLista(listaCache);
+                        }
+                    }
+                }, { passive: true });
+
+                li.addEventListener('touchend', () => {
+                    if (draggedIndex !== null) {
+                        li.classList.remove('dragging');
+                        if (clone) {
+                            clone.remove();
+                            clone = null;
+                        }
+                        draggedIndex = null;
                         renderizarLista(listaCache);
                     }
                 });
