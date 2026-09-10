@@ -97,6 +97,16 @@
             background: #111;
             border-radius: 6px;
             margin-bottom: 10px;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .list-item:active {
+            cursor: grabbing;
+        }
+
+        .list-item.dragging {
+            opacity: 0.4;
         }
 
         .item-row-top {
@@ -167,7 +177,6 @@
             border-radius: 4px;
         }
 
-        .btn-move { color: #f1c40f; }
         .btn-delete { color: var(--danger-color); }
         .btn-edit { color: #4da6ff; }
 
@@ -357,6 +366,7 @@
         const saveEditBtn = document.getElementById('saveEdit');
 
         let listaCache = [];
+        let draggedIndex = null;
 
         async function carregarLista() {
             try {
@@ -382,18 +392,18 @@
                 const price = parseFloat(item.price) || 0;
                 const subtotal = qty * price;
 
-                // Agora o subtotal de todos os itens é somado no total geral, mesmo quando checados
                 valorTotalGeral += subtotal;
 
                 const li = document.createElement('li');
                 li.className = `list-item ${isChecked ? 'checked' : ''}`;
+                li.setAttribute('draggable', 'true');
+                li.dataset.index = index;
+
                 li.innerHTML = `
                     <div class="item-row-top">
                         <input type="checkbox" class="item-check" ${isChecked ? 'checked' : ''}>
                         <span class="item-name">${item.name}</span>
                         <div class="item-actions">
-                            <button class="btn-action btn-move btn-up" title="Mover para cima">▲</button>
-                            <button class="btn-action btn-move btn-down" title="Mover para baixo">▼</button>
                             <button class="btn-action btn-edit">Editar</button>
                             <button class="btn-action btn-delete">Excluir</button>
                         </div>
@@ -404,31 +414,35 @@
                     </div>
                 `;
 
+                // Eventos de Drag and Drop
+                li.addEventListener('dragstart', (e) => {
+                    draggedIndex = index;
+                    li.classList.add('dragging');
+                });
+
+                li.addEventListener('dragend', () => {
+                    li.classList.remove('dragging');
+                    draggedIndex = null;
+                });
+
+                li.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+
+                li.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (draggedIndex !== null && draggedIndex !== index) {
+                        const movedItem = listaCache.splice(draggedIndex, 1)[0];
+                        listaCache.splice(index, 0, movedItem);
+                        renderizarLista(listaCache);
+                    }
+                });
+
                 const checkbox = li.querySelector('.item-check');
                 checkbox.addEventListener('change', () => {
                     item.checked = checkbox.checked;
                     renderizarLista(listaCache);
                     enviarRequisicao({ action: "update", id: item.id, name: item.name, qty: item.qty, price: item.price, checked: checkbox.checked });
-                });
-
-                // Mover para cima
-                li.querySelector('.btn-up').addEventListener('click', () => {
-                    if (index > 0) {
-                        const temp = listaCache[index];
-                        listaCache[index] = listaCache[index - 1];
-                        listaCache[index - 1] = temp;
-                        renderizarLista(listaCache);
-                    }
-                });
-
-                // Mover para baixo
-                li.querySelector('.btn-down').addEventListener('click', () => {
-                    if (index < listaCache.length - 1) {
-                        const temp = listaCache[index];
-                        listaCache[index] = listaCache[index + 1];
-                        listaCache[index + 1] = temp;
-                        renderizarLista(listaCache);
-                    }
                 });
 
                 li.querySelector('.btn-delete').addEventListener('click', () => {
