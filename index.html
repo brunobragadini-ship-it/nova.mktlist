@@ -42,14 +42,29 @@
         }
 
         .app-logo {
-            height: 48px;
+            height: 128px;
             width: auto;
             object-fit: contain;
         }
 
         .sync-status {
-            font-size: 0.8rem;
+            font-size: 1.2rem;
             color: var(--secondary-text-color);
+        }
+
+        .top-total-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #111;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .total-value {
+            color: #4cd137;
         }
 
         main {
@@ -142,7 +157,7 @@
 
         .fab-btn {
             position: fixed;
-            bottom: 75px;
+            bottom: 20px;
             right: 20px;
             background-color: var(--primary-color);
             color: white;
@@ -162,21 +177,6 @@
 
         .fab-btn:active {
             transform: scale(0.95);
-        }
-
-        footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            background-color: #111;
-            border-top: 1px solid var(--border-color);
-            font-size: 1.1rem;
-            font-weight: bold;
-        }
-
-        .total-value {
-            color: #4cd137;
         }
 
         .modal-overlay {
@@ -255,19 +255,19 @@
         <div class="logo-title-container">
             <img src="MKTLIST-removebg-preview.png" alt="Logo" class="app-logo">
         </div>
-        <div class="sync-status" id="syncStatus">Sincronizado</div>
+        <div class="sync-status" id="syncStatus">🟢</div>
     </header>
+
+    <div class="top-total-bar">
+        <span>Total da Compra:</span>
+        <span class="total-value" id="totalCompra">R$ 0,00</span>
+    </div>
 
     <main>
         <ul class="item-list" id="itemList"></ul>
     </main>
 
     <button class="fab-btn" id="openAddModalBtn">+</button>
-
-    <footer>
-        <span>Total da Compra:</span>
-        <span class="total-value" id="totalCompra">R$ 0,00</span>
-    </footer>
 
     <!-- Modal de Adicionar Item -->
     <div class="modal-overlay" id="addModal">
@@ -317,10 +317,6 @@
     </div>
 
     <script>
-        if (!localStorage.getItem('mkt_user')) {
-            window.location.href = 'login.html';
-        }
-
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxlBENTlIdu3z82s7LUP_bXe4vWgzLQq_k2ztwYIX366WL4XDs-WU6rSgN5KoTAOYyI/exec";
 
         const itemList = document.getElementById('itemList');
@@ -352,10 +348,10 @@
                 if (Array.isArray(data)) {
                     listaCache = data;
                     renderizarLista(listaCache);
-                    syncStatus.textContent = "Sincronizado";
+                    syncStatus.textContent = "🟢";
                 }
             } catch (error) {
-                syncStatus.textContent = "Erro ao sincronizar";
+                syncStatus.textContent = "🔴";
             }
         }
 
@@ -476,7 +472,7 @@
         });
 
         function enviarRequisicao(payload) {
-            syncStatus.textContent = "Salvando...";
+            syncStatus.textContent = "🔄";
             const formData = new URLSearchParams();
             for (const key in payload) {
                 formData.append(key, payload[key]);
@@ -487,9 +483,9 @@
                 mode: 'no-cors',
                 body: formData
             }).then(() => {
-                syncStatus.textContent = "Sincronizado";
+                syncStatus.textContent = "🟢";
             }).catch(() => {
-                syncStatus.textContent = "Erro ao sincronizar";
+                syncStatus.textContent = "🔴";
             });
         }
 
