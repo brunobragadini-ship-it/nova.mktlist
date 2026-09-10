@@ -38,13 +38,22 @@
         .logo-title-container {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
         }
 
         .app-logo {
-            height: 128px;
+            height: 384px; /* Aumentado 3x em relação aos 128px anteriores */
             width: auto;
             object-fit: contain;
+        }
+
+        .header-title {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--text-color);
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         .sync-status {
@@ -254,6 +263,7 @@
     <header>
         <div class="logo-title-container">
             <img src="MKTLIST-removebg-preview.png" alt="Logo" class="app-logo">
+            <span class="header-title">LISTA DE COMPRAS</span>
         </div>
         <div class="sync-status" id="syncStatus">🟢</div>
     </header>
