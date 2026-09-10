@@ -86,6 +86,9 @@
             list-style-type: none;
             padding: 0;
             margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .list-item {
@@ -93,20 +96,26 @@
             flex-direction: column;
             gap: 8px;
             padding: 12px;
-            border-bottom: 1px solid var(--border-color);
+            border: 1px solid var(--border-color);
             background: #111;
-            border-radius: 6px;
-            margin-bottom: 10px;
+            border-radius: 8px;
             cursor: grab;
             user-select: none;
+            /* Efeito moderno e suave para movimentações e trocas */
+            transition: transform 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
         }
 
         .list-item:active {
             cursor: grabbing;
         }
 
+        /* Estilo elegante para o item que está sendo arrastado */
         .list-item.dragging {
-            opacity: 0.4;
+            opacity: 0.5;
+            background: #1a1a2e;
+            border-color: var(--primary-color);
+            box-shadow: 0 8px 20px rgba(106, 90, 205, 0.3);
+            transform: scale(1.02);
         }
 
         .item-row-top {
@@ -147,7 +156,7 @@
         }
 
         .list-item.checked {
-            opacity: 0.5;
+            opacity: 0.4;
         }
 
         .list-item.checked .item-name {
@@ -414,10 +423,10 @@
                     </div>
                 `;
 
-                // Eventos de Drag and Drop
+                // Eventos de arrastar moderno
                 li.addEventListener('dragstart', (e) => {
                     draggedIndex = index;
-                    li.classList.add('dragging');
+                    setTimeout(() => li.classList.add('dragging'), 0);
                 });
 
                 li.addEventListener('dragend', () => {
@@ -434,6 +443,7 @@
                     if (draggedIndex !== null && draggedIndex !== index) {
                         const movedItem = listaCache.splice(draggedIndex, 1)[0];
                         listaCache.splice(index, 0, movedItem);
+                        draggedIndex = index;
                         renderizarLista(listaCache);
                     }
                 });
