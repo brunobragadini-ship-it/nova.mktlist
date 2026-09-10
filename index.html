@@ -30,7 +30,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
+            padding: 12px 20px;
             border-bottom: 1px solid var(--border-color);
             background-color: rgba(0,0,0,0.8);
         }
@@ -38,21 +38,21 @@
         .logo-title-container {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 15px;
         }
 
         .app-logo {
-            height: 48px; /* Proporção equilibrada para o cabeçalho */
+            height: 85px; /* Aumentado para dar destaque e legibilidade ideal */
             width: auto;
             object-fit: contain;
         }
 
         .header-title {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 1.1rem;
+            font-size: 1.4rem;
             font-weight: bold;
             color: var(--text-color);
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
             text-transform: uppercase;
         }
 
@@ -490,7 +490,7 @@
 
             fetch(WEB_APP_URL, {
                 method: 'POST',
-                mode: 'no-cors',
+                    mode: 'no-cors',
                 body: formData
             }).then(() => {
                 syncStatus.textContent = "🟢";
