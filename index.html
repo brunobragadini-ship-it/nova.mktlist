@@ -146,7 +146,6 @@
         .btn-delete { color: var(--danger-color); }
         .btn-edit { color: #4da6ff; }
 
-        /* Botão Flutuante (FAB) para Adicionar */
         .fab-btn {
             position: fixed;
             bottom: 75px;
@@ -186,7 +185,6 @@
             color: #4cd137;
         }
 
-        /* Estilo dos Modais */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -271,7 +269,6 @@
         <ul class="item-list" id="itemList"></ul>
     </main>
 
-    <!-- Botão Flutuante para Adicionar -->
     <button class="fab-btn" id="openAddModalBtn">+</button>
 
     <footer>
@@ -327,15 +324,8 @@
     </div>
 
     <script>
-        // 1. VERIFICAÇÃO DE LOGIN (DEVE SER A PRIMEIRA COISA EXECUTADA)
         if (!localStorage.getItem('mkt_user')) {
             window.location.href = 'login.html';
-        }
-
-        // Opcional: Verificação de perfil admin
-        const perfilUsuario = localStorage.getItem('mkt_perfil'); 
-        if (perfilUsuario !== 'admin') {
-            // Se precisar restringir algo futuramente
         }
 
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxlBENTlIdu3z82s7LUP_bXe4vWgzLQq_k2ztwYIX366WL4XDs-WU6rSgN5KoTAOYyI/exec";
@@ -344,7 +334,6 @@
         const syncStatus = document.getElementById('syncStatus');
         const totalCompraEl = document.getElementById('totalCompra');
 
-        // Modais
         const addModal = document.getElementById('addModal');
         const openAddModalBtn = document.getElementById('openAddModalBtn');
         const cancelAddBtn = document.getElementById('cancelAdd');
@@ -412,11 +401,11 @@
                 checkbox.addEventListener('change', () => {
                     item.checked = checkbox.checked;
                     renderizarLista(listaCache);
-                    enviarRequisicao({ action: "update", id: item.id, checked: checkbox.checked });
+                    enviarRequisicao({ action: "update", id: item.id, name: item.name, qty: item.qty, price: item.price, checked: checkbox.checked });
                 });
 
                 li.querySelector('.btn-delete').addEventListener('click', () => {
-                    listaCache = listaCache.filter(i => i.id !== item.id);
+                    listaCache = listaCache.filter(i => String(i.id) !== String(item.id));
                     renderizarLista(listaCache);
                     enviarRequisicao({ action: "delete", id: item.id });
                 });
@@ -435,7 +424,6 @@
             totalCompraEl.textContent = `R$ ${valorTotalGeral.toFixed(2)}`;
         }
 
-        // Abrir e Fechar Modal de Adicionar
         openAddModalBtn.addEventListener('click', () => {
             newModalName.value = '';
             newModalQty.value = '';
@@ -470,14 +458,13 @@
             enviarRequisicao({ action: "add", ...newItem });
         });
 
-        // Fechar e Salvar Edição
         cancelEditBtn.addEventListener('click', () => {
             editModal.style.display = 'none';
         });
 
         saveEditBtn.addEventListener('click', () => {
             const id = editIdInput.value;
-            const name = editNameInput.value.post ? editNameInput.value.trim() : editNameInput.value.trim();
+            const name = editNameInput.value.trim(); // Corrigido erro de sintaxe anterior
             const qty = parseFloat(editQtyInput.value) || 1;
             const price = parseFloat(editPriceInput.value) || 0;
 
@@ -492,7 +479,7 @@
             }
 
             editModal.style.display = 'none';
-            enviarRequisicao({ action: "update", id, name, qty, price });
+            enviarRequisicao({ action: "update", id, name, qty, price, checked: item ? item.checked : false });
         });
 
         function enviarRequisicao(payload) {
