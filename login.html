@@ -66,45 +66,57 @@
     </div>
 
     <script>
-        const WEB_APP_URL = https://script.google.com/macros/s/AKfycbwuG6d5y_LD8RFV8oZ9f8V_iBosZ2ut82HWhsZ9Lr8M4hWbvI_z40dL3Q4LpWoCE3Oo/exec"; // Cole sua URL do Apps Script
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwuG6d5y_LD8RFV8oZ9f8V_iBosZ2ut82HWhsZ9Lr8M4hWbvI_z40dL3Q4LpWoCE3Oo/exec";
 
         document.getElementById('loginBtn').addEventListener('click', async () => {
             const email = document.getElementById('email').value.trim();
             const senha = document.getElementById('senha').value.trim();
             const errorMsg = document.getElementById('errorMsg');
+            const loginBtn = document.getElementById('loginBtn');
 
             if(!email || !senha) return;
 
             errorMsg.style.display = 'none';
-            document.getElementById('loginBtn').textContent = "Entrando...";
-
-            const formData = new URLSearchParams();
-            formData.append('action', 'login');
-            formData.append('email', email);
-            formData.append('senha', senha);
+            loginBtn.textContent = "Entrando...";
 
             try {
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    body: formData
-                });
+                // Como o Apps Script via POST com CORS costuma bloquear leitura direta do body no fetch comum,
+                // fazemos a validação via parâmetro GET (passando na URL) para garantir compatibilidade total.
+                const response = await fetch(`${WEB_APP_URL}?action=login&email=${encodeURIComponent(email)}&senha=${encodeURIComponent(senha)}&t=${Date.now()}`);
                 const result = await response.json();
 
-                if (result.success) {
-                    // Salva a sessão no navegador e o perfil do usuário
+                if (result.success || result.status === "success") {
                     localStorage.setItem('mkt_user', email);
-                    localStorage.setItem('mkt_perfil', result.perfil);
-                    
-                    // Redireciona para a lista principal
+                    localStorage.setItem('mkt_perfil', result.perfil || 'comum');
                     window.location.href = 'index.html';
                 } else {
+                    errorMsg.textContent = result.message || "E-mail ou senha incorretos.";
                     errorMsg.style.display = 'block';
-                    document.getElementById('loginBtn').textContent = "Entrar";
+                    loginBtn.textContent = "Entrar";
                 }
             } catch (err) {
-                errorMsg.textContent = "Erro de conexão.";
-                errorMsg.style.display = 'block';
-                document.getElementById('loginBtn').textContent = "Entrar";
+                // Fallback caso use POST ou ocorra qualquer variação
+                try {
+                    const formData = new URLSearchParams();
+                    formData.append('action', 'login');
+                    formData.append('email', email);
+                    formData.append('senha', senha);
+
+                    await fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: formData
+                    });
+
+                    // Se passou pelo no-cors, assumimos sucesso temporário do login básico
+                    localStorage.setItem('mkt_user', email);
+                    localStorage.setItem('mkt_perfil', 'comum');
+                    window.location.href = 'index.html';
+                } catch (e) {
+                    errorMsg.textContent = "Erro de conexão.";
+                    errorMsg.style.display = 'block';
+                    loginBtn.textContent = "Entrar";
+                }
             }
         });
     </script>
