@@ -63,9 +63,9 @@
             text-overflow: ellipsis;
         }
 
+        /* Emoji de status levemente menor */
         .sync-status {
-            font-size: 1rem;
-            color: var(--secondary-text-color);
+            font-size: 0.85rem;
             flex-shrink: 0;
         }
 
@@ -80,8 +80,9 @@
             font-weight: bold;
         }
 
+        /* Valor total na mesma cor roxa da logomarca */
         .total-value {
-            color: #4cd137;
+            color: var(--primary-color);
         }
 
         main {
@@ -144,7 +145,6 @@
             gap: 8px;
         }
 
-        /* Fonte dos itens ligeiramente reduzida */
         .item-name {
             font-size: 0.93rem;
             flex: 1;
@@ -163,7 +163,6 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            /* Fonte de quantidade/subtotal ligeiramente reduzida */
             font-size: 0.8rem;
             color: var(--secondary-text-color);
             gap: 5px;
@@ -250,7 +249,6 @@
             box-sizing: border-box;
         }
 
-        /* Pop-ups / Modais um pouco mais compactos */
         .modal-content {
             background: #181818;
             padding: 16px;
@@ -320,7 +318,7 @@
             <img src="MKTLIST-removebg-preview.png" alt="Logo" class="app-logo">
             <span class="header-title">LISTA DE COMPRAS</span>
         </div>
-        <div class="sync-status" id="syncStatus">🟢</div>
+        <div class="sync-status" id="syncStatus">🔄</div>
     </header>
 
     <div class="top-total-bar">
@@ -408,16 +406,19 @@
         let draggedIndex = null;
 
         async function carregarLista() {
+            syncStatus.textContent = "🔄";
             try {
                 const response = await fetch(`${WEB_APP_URL}?action=read&t=${Date.now()}`);
                 const data = await response.json();
                 if (Array.isArray(data)) {
                     listaCache = data;
                     renderizarLista(listaCache);
-                    syncStatus.textContent = "🟢";
+                    syncStatus.textContent = "🔄";
+                } else {
+                    syncStatus.textContent = "❌";
                 }
             } catch (error) {
-                syncStatus.textContent = "🔴";
+                syncStatus.textContent = "❌";
             }
         }
 
@@ -630,9 +631,9 @@
                 mode: 'no-cors',
                 body: formData
             }).then(() => {
-                syncStatus.textContent = "🟢";
+                syncStatus.textContent = "🔄";
             }).catch(() => {
-                syncStatus.textContent = "🔴";
+                syncStatus.textContent = "❌";
             });
         }
 
