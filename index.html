@@ -42,15 +42,9 @@
         }
 
         .app-logo {
-            height: 32px;
+            height: 48px;
             width: auto;
             object-fit: contain;
-        }
-
-        header h1 {
-            font-size: 1.2rem;
-            margin: 0;
-            color: var(--primary-color);
         }
 
         .sync-status {
@@ -260,7 +254,6 @@
     <header>
         <div class="logo-title-container">
             <img src="MKTLIST-removebg-preview.png" alt="Logo" class="app-logo">
-            <h1>nova.MKTLIST</h1>
         </div>
         <div class="sync-status" id="syncStatus">Sincronizado</div>
     </header>
@@ -464,7 +457,7 @@
 
         saveEditBtn.addEventListener('click', () => {
             const id = editIdInput.value;
-            const name = editNameInput.value.trim(); // Corrigido erro de sintaxe anterior
+            const name = editNameInput.value.trim();
             const qty = parseFloat(editQtyInput.value) || 1;
             const price = parseFloat(editPriceInput.value) || 0;
 
