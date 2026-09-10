@@ -1,3 +1,13 @@
+// Verifica se o usuário está logado
+if (!localStorage.getItem('mkt_user')) {
+    window.location.href = 'login.html';
+}
+
+// Se quiser verificar se é admin para ocultar/mostrar funções:
+const perfilUsuario = localStorage.getItem('mkt_perfil'); // 'admin' ou 'comum'
+if (perfilUsuario !== 'admin') {
+    // Exemplo: se não for admin, você pode esconder botões de exclusão ou edição global se desejar
+}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
