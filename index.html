@@ -106,33 +106,41 @@
             border: 1px solid var(--border-color);
             background: #111;
             border-radius: 8px;
-            cursor: grab;
             user-select: none;
-            touch-action: pan-y;
-            transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
-        }
-
-        .list-item:active {
-            cursor: grabbing;
+            transition: background-color 0.25s ease, border-color 0.25s ease, opacity 0.25s ease;
         }
 
         .list-item.dragging {
-            opacity: 0.4;
+            opacity: 0.3;
             background: #1a1a2e;
             border-color: var(--primary-color);
+        }
+
+        .drag-handle {
+            color: var(--secondary-text-color);
+            font-size: 1.1rem;
+            cursor: grab;
+            padding: 0 4px;
+            touch-action: none; /* Impede conflitos de scroll ao tocar na alça */
+            display: flex;
+            align-items: center;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
         }
 
         .drag-clone {
             position: fixed;
             pointer-events: none;
             z-index: 9999;
-            opacity: 0.9;
+            opacity: 0.95;
             background: #1a1a2e;
             border: 1px solid var(--primary-color);
             border-radius: 8px;
             box-shadow: 0 10px 25px rgba(106, 90, 205, 0.4);
             box-sizing: border-box;
-            transform: scale(1.03);
+            transform: scale(1.02);
             transition: none !important;
         }
 
@@ -164,6 +172,7 @@
             font-size: 0.8rem;
             color: var(--secondary-text-color);
             gap: 5px;
+            padding-left: 24px;
         }
 
         .item-check {
@@ -434,11 +443,11 @@
 
                 const li = document.createElement('li');
                 li.className = `list-item ${isChecked ? 'checked' : ''}`;
-                li.setAttribute('draggable', 'true');
                 li.dataset.index = index;
 
                 li.innerHTML = `
                     <div class="item-row-top">
+                        <span class="drag-handle" title="Segure para arrastar">⋮⋮</span>
                         <input type="checkbox" class="item-check" ${isChecked ? 'checked' : ''}>
                         <span class="item-name">${item.name}</span>
                         <div class="item-actions">
@@ -452,39 +461,13 @@
                     </div>
                 `;
 
-                // --- COMPUTADOR (Drag and Drop HTML5) ---
-                li.addEventListener('dragstart', (e) => {
-                    draggedIndex = index;
-                    setTimeout(() => li.classList.add('dragging'), 0);
-                });
-
-                li.addEventListener('dragend', () => {
-                    li.classList.remove('dragging');
-                    draggedIndex = null;
-                });
-
-                li.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                });
-
-                li.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    if (draggedIndex !== null && draggedIndex !== index) {
-                        const movedItem = listaCache.splice(draggedIndex, 1)[0];
-                        listaCache.splice(index, 0, movedItem);
-                        draggedIndex = index;
-                        renderizarLista(listaCache);
-                    }
-                });
-
-                // --- CELULAR (Touch Events para Mobile) ---
+                // --- SISTEMA DE ARRASTO FLUIDO (Estilo Google Keep via Alça) ---
+                const handle = li.querySelector('.drag-handle');
                 let clone = null;
                 let startY = 0;
                 let initialY = 0;
 
-                li.addEventListener('touchstart', (e) => {
-                    if (e.target.closest('button') || e.target.closest('input')) return;
-                    
+                handle.addEventListener('touchstart', (e) => {
                     draggedIndex = index;
                     startY = e.touches[0].clientY;
                     initialY = li.getBoundingClientRect().top;
@@ -499,7 +482,7 @@
                     document.body.appendChild(clone);
                 }, { passive: true });
 
-                li.addEventListener('touchmove', (e) => {
+                window.addEventListener('touchmove', (e) => {
                     if (draggedIndex === null || !clone) return;
                     
                     const currentY = e.touches[0].clientY;
@@ -520,7 +503,7 @@
                     }
                 }, { passive: true });
 
-                li.addEventListener('touchend', () => {
+                window.addEventListener('touchend', () => {
                     if (draggedIndex !== null) {
                         li.classList.remove('dragging');
                         if (clone) {
