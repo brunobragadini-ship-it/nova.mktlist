@@ -107,37 +107,6 @@
             background: #111;
             border-radius: 8px;
             user-select: none;
-            transition: border-color 0.2s ease;
-        }
-
-        .list-item.dragging-original {
-            opacity: 0.15;
-            background: #1a1a2e;
-            border: 1px dashed var(--primary-color);
-        }
-
-        .drag-handle {
-            color: var(--secondary-text-color);
-            font-size: 1.2rem;
-            cursor: grab;
-            padding: 0 6px 0 0;
-            touch-action: none;
-            display: flex;
-            align-items: center;
-        }
-
-        .drag-clone {
-            position: fixed;
-            pointer-events: none;
-            z-index: 9999;
-            opacity: 0.95;
-            background: #1a1a2e;
-            border: 1px solid var(--primary-color);
-            border-radius: 8px;
-            box-shadow: 0 12px 30px rgba(106, 90, 205, 0.5);
-            box-sizing: border-box;
-            transform: scale(1.03);
-            transition: none !important;
         }
 
         .item-row-top {
@@ -157,7 +126,7 @@
         .item-actions {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
             flex-shrink: 0;
         }
 
@@ -205,15 +174,20 @@
         }
 
         .btn-action {
-            background: none;
-            border: none;
+            background: #222;
+            border: 1px solid #444;
             cursor: pointer;
-            font-size: 0.8rem;
-            padding: 2px 4px;
+            font-size: 0.75rem;
+            padding: 3px 6px;
             border-radius: 4px;
+            color: var(--text-color);
         }
 
-        .btn-delete { color: var(--danger-color); }
+        .btn-action:active {
+            background: #333;
+        }
+
+        .btn-delete { color: var(--danger-color); border-color: #552222; }
         .btn-edit { color: #4da6ff; }
 
         .fab-btn {
@@ -406,10 +380,6 @@
         const saveEditBtn = document.getElementById('saveEdit');
 
         let listaCache = [];
-        let draggedIndex = null;
-        let activeClone = null;
-        let touchStartY = 0;
-        let elementInitialTop = 0;
 
         async function carregarLista() {
             syncStatus.textContent = "🔄";
@@ -442,14 +412,14 @@
 
                 const li = document.createElement('li');
                 li.className = `list-item ${isChecked ? 'checked' : ''}`;
-                li.dataset.index = index;
 
                 li.innerHTML = `
                     <div class="item-row-top">
-                        <span class="drag-handle" title="Arraste para mover">⋮⋮</span>
                         <input type="checkbox" class="item-check" ${isChecked ? 'checked' : ''}>
                         <span class="item-name">${item.name}</span>
                         <div class="item-actions">
+                            <button class="btn-action btn-up" title="Mover para cima">⬆️</button>
+                            <button class="btn-action btn-down" title="Mover para baixo">⬇️</button>
                             <button class="btn-action btn-edit">Editar</button>
                             <button class="btn-action btn-delete">Excluir</button>
                         </div>
@@ -460,24 +430,23 @@
                     </div>
                 `;
 
-                // --- SISTEMA DE ARRASTO TOUCH FLUÍDO (Estilo Keep) ---
-                const handle = li.querySelector('.drag-handle');
+                // Botão Subir na Lista
+                li.querySelector('.btn-up').addEventListener('click', () => {
+                    if (index > 0) {
+                        const movedItem = listaCache.splice(index, 1)[0];
+                        listaCache.splice(index - 1, 0, movedItem);
+                        renderizarLista(listaCache);
+                    }
+                });
 
-                handle.addEventListener('touchstart', (e) => {
-                    draggedIndex = index;
-                    touchStartY = e.touches[0].clientY;
-                    const rect = li.getBoundingClientRect();
-                    elementInitialTop = rect.top;
-
-                    li.classList.add('dragging-original');
-
-                    activeClone = li.cloneNode(true);
-                    activeClone.className = 'list-item drag-clone';
-                    activeClone.style.width = `${rect.width}px`;
-                    activeClone.style.left = `${rect.left}px`;
-                    activeClone.style.top = `${rect.top}px`;
-                    document.body.appendChild(activeClone);
-                }, { passive: true });
+                // Botão Descer na Lista
+                li.querySelector('.btn-down').addEventListener('click', () => {
+                    if (index < listaCache.length - 1) {
+                        const movedItem = listaCache.splice(index, 1)[0];
+                        listaCache.splice(index + 1, 0, movedItem);
+                        renderizarLista(listaCache);
+                    }
+                });
 
                 const checkbox = li.querySelector('.item-check');
                 checkbox.addEventListener('change', () => {
@@ -505,46 +474,6 @@
 
             totalCompraEl.textContent = `R$ ${valorTotalGeral.toFixed(2)}`;
         }
-
-        // Eventos globais de movimento para garantir fluidez perfeita sem travar
-        window.addEventListener('touchmove', (e) => {
-            if (draggedIndex === null || !activeClone) return;
-
-            const currentY = e.touches[0].clientY;
-            const deltaY = currentY - touchStartY;
-            activeClone.style.top = `${elementInitialTop + deltaY}px`;
-
-            const elemBelow = document.elementFromPoint(window.innerWidth / 2, currentY);
-            const targetLi = elemBelow ? elemBelow.closest('.list-item') : null;
-
-            if (targetLi && !targetLi.classList.contains('drag-clone')) {
-                const targetIndex = parseInt(targetLi.dataset.index);
-                if (!isNaN(targetIndex) && targetIndex !== draggedIndex) {
-                    const movedItem = listaCache.splice(draggedIndex, 1)[0];
-                    listaCache.splice(targetIndex, 0, movedItem);
-                    draggedIndex = targetIndex;
-                    renderizarLista(listaCache);
-                    
-                    // Reatribui o estilo de arrasto no novo elemento renderizado
-                    const newLi = itemList.children[targetIndex];
-                    if (newLi) {
-                        newLi.classList.add('dragging-original');
-                        elementInitialTop = newLi.getBoundingClientRect().top;
-                    }
-                }
-            }
-        }, { passive: true });
-
-        window.addEventListener('touchend', () => {
-            if (draggedIndex !== null) {
-                if (activeClone) {
-                    activeClone.remove();
-                    activeClone = null;
-                }
-                draggedIndex = null;
-                renderizarLista(listaCache);
-            }
-        });
 
         openAddModalBtn.addEventListener('click', () => {
             newModalName.value = '';
