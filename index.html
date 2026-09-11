@@ -4,18 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nova.Mklist</title>
+    
+    <!-- SDK do Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         :root {
             --primary-color: #6a5acd;
-            --bg-color: #000000;
-            --text-color: #ffffff;
-            --secondary-text-color: #b0b0b0;
-            --border-color: #333;
-            --danger-color: #ff4d4d;
+            --primary-hover: #5848b5;
+            --bg-color: #050505;
+            --card-bg: #111113;
+            --card-border: #222226;
+            --text-color: #f3f4f6;
+            --secondary-text-color: #9ca3af;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
@@ -31,62 +38,69 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 15px;
-            border-bottom: 1px solid var(--border-color);
-            background-color: rgba(0,0,0,0.8);
-            gap: 8px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--card-border);
+            background-color: rgba(11, 11, 13, 0.9);
+            backdrop-filter: blur(10px);
         }
 
         .logo-title-container {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             overflow: hidden;
             flex: 1;
         }
 
         .app-logo {
-            height: 45px;
+            height: 38px;
             width: auto;
             object-fit: contain;
             flex-shrink: 0;
+            border-radius: 6px;
         }
 
         .header-title {
-            font-size: 0.85rem;
-            font-weight: bold;
+            font-size: 0.95rem;
+            font-weight: 700;
             color: var(--text-color);
-            letter-spacing: 0.3px;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .sync-status {
             font-size: 0.85rem;
-            flex-shrink: 0;
+            padding: 4px 10px;
+            background: rgba(106, 90, 205, 0.15);
+            border-radius: 20px;
+            border: 1px solid rgba(106, 90, 205, 0.3);
         }
 
         .top-total-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 15px;
-            background-color: #111;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 0.9rem;
-            font-weight: bold;
+            padding: 14px 20px;
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--card-border);
+            font-size: 0.95rem;
+            font-weight: 600;
         }
 
         .total-value {
             color: var(--primary-color);
+            font-size: 1.1rem;
+            font-weight: 700;
         }
 
         main {
             flex: 1;
             overflow-y: auto;
-            padding: 10px;
+            padding: 16px;
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto;
+            box-sizing: border-box;
         }
 
         .item-list {
@@ -95,38 +109,43 @@
             margin: 0;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
         }
 
         .list-item {
             display: flex;
             flex-direction: column;
-            gap: 5px;
-            padding: 9px 10px;
-            border: 1px solid var(--border-color);
-            background: #111;
-            border-radius: 8px;
-            user-select: none;
+            gap: 8px;
+            padding: 14px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        .list-item:hover {
+            border-color: rgba(106, 90, 205, 0.4);
         }
 
         .item-row-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 8px;
+            gap: 12px;
         }
 
         .item-name {
-            font-size: 0.93rem;
+            font-size: 1rem;
             flex: 1;
-            font-weight: 500;
+            font-weight: 600;
             word-break: break-word;
         }
 
         .item-actions {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             flex-shrink: 0;
         }
 
@@ -134,29 +153,33 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             color: var(--secondary-text-color);
-            gap: 5px;
-            padding-left: 28px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         .item-check {
             appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             border: 2px solid var(--primary-color);
-            border-radius: 50%;
+            border-radius: 6px;
             cursor: pointer;
             position: relative;
             flex-shrink: 0;
+            background: rgba(0,0,0,0.2);
+            transition: background 0.2s;
         }
 
         .list-item.checked {
-            opacity: 0.4;
+            opacity: 0.5;
+            background: #0d0d0f;
         }
 
         .list-item.checked .item-name {
             text-decoration: line-through;
+            color: var(--secondary-text-color);
         }
 
         .list-item.checked .item-check {
@@ -170,121 +193,134 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 12px;
+            font-size: 13px;
+            font-weight: bold;
         }
 
         .btn-action {
-            background: #222;
-            border: 1px solid #444;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
             cursor: pointer;
-            font-size: 0.75rem;
-            padding: 3px 6px;
-            border-radius: 4px;
+            font-size: 0.8rem;
+            padding: 6px 10px;
+            border-radius: 6px;
             color: var(--text-color);
+            transition: background 0.2s;
         }
 
-        .btn-action:active {
-            background: #333;
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.1);
         }
 
-        .btn-delete { color: var(--danger-color); border-color: #552222; }
-        .btn-edit { color: #4da6ff; }
+        .btn-delete { color: var(--danger-color); border-color: rgba(239, 68, 68, 0.2); }
+        .btn-delete:hover { background: rgba(239, 68, 68, 0.1); }
+        .btn-edit { color: #60a5fa; border-color: rgba(96, 165, 250, 0.2); }
+        .btn-edit:hover { background: rgba(96, 165, 250, 0.1); }
 
         .fab-btn {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 24px;
+            right: 24px;
             background-color: var(--primary-color);
             color: white;
             border: none;
-            width: 48px;
-            height: 48px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 25px -5px rgba(106, 90, 205, 0.5);
+            transition: transform 0.2s, background-color 0.2s;
             z-index: 99;
-            transition: transform 0.2s;
         }
 
-        .fab-btn:active {
-            transform: scale(0.95);
-        }
+        .fab-btn:hover { background-color: var(--primary-hover); }
+        .fab-btn:active { transform: scale(0.92); }
 
         .modal-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            padding: 15px;
+            padding: 16px;
             box-sizing: border-box;
         }
 
         .modal-content {
-            background: #181818;
-            padding: 16px;
-            border-radius: 8px;
+            background: #161619;
+            padding: 24px;
+            border-radius: 16px;
             width: 100%;
-            max-width: 330px;
-            border: 1px solid var(--border-color);
+            max-width: 360px;
+            border: 1px solid var(--card-border);
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 14px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
             box-sizing: border-box;
         }
 
         .modal-content h3 {
             margin: 0 0 4px 0;
-            font-size: 1rem;
-            color: var(--primary-color);
+            font-size: 1.1rem;
+            color: var(--text-color);
         }
 
         .input-group {
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            gap: 6px;
         }
 
         .input-group label {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: var(--secondary-text-color);
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .input-field {
-            background-color: #222;
-            border: 1px solid #444;
+            background-color: #0b0b0d;
+            border: 1px solid var(--card-border);
             color: var(--text-color);
-            padding: 8px 10px;
-            border-radius: 5px;
-            font-size: 0.9rem;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
             width: 100%;
             box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary-color);
         }
 
         .modal-buttons {
             display: flex;
             justify-content: flex-end;
-            gap: 8px;
-            margin-top: 6px;
+            gap: 10px;
+            margin-top: 8px;
         }
 
         .modal-btn {
-            padding: 7px 12px;
+            padding: 10px 16px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
-            font-size: 0.85rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: opacity 0.2s;
         }
 
-        .btn-cancel { background: #333; color: white; }
+        .modal-btn:hover { opacity: 0.9; }
+        .btn-cancel { background: #222226; color: var(--text-color); }
         .btn-save { background: var(--primary-color); color: white; }
     </style>
 </head>
@@ -292,10 +328,10 @@
 
     <header>
         <div class="logo-title-container">
-            <img src="MKTLIST-removebg-preview.png" alt="Logo" class="app-logo">
-            <span class="header-title">LISTA DE COMPRAS</span>
+            <img src="MKTLIST-removebg-preview.png" alt="Logo" class="app-logo" onerror="this.style.display='none'">
+            <span class="header-title">Lista de Compras</span>
         </div>
-        <div class="sync-status" id="syncStatus">🔄</div>
+        <div class="sync-status" id="syncStatus">⚡ Sincronizado</div>
     </header>
 
     <div class="top-total-bar">
@@ -304,6 +340,7 @@
     </div>
 
     <main id="mainContainer">
+        <div id="loadingMsg" style="text-align: center; color: var(--secondary-text-color); margin-top: 40px;">Carregando itens...</div>
         <ul class="item-list" id="itemList"></ul>
     </main>
 
@@ -357,11 +394,16 @@
     </div>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxlBENTlIdu3z82s7LUP_bXe4vWgzLQq_k2ztwYIX366WL4XDs-WU6rSgN5KoTAOYyI/exec";
+        // CREDENCIAIS DO SUPABASE CONFIGURADAS
+        const SUPABASE_URL = 'https://zcyofjnswaozqlfvvhzw.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_sTZuxGBm5sf_mAEopreaUA_hbllL-l1';
+
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const itemList = document.getElementById('itemList');
         const syncStatus = document.getElementById('syncStatus');
         const totalCompraEl = document.getElementById('totalCompra');
+        const loadingMsg = document.getElementById('loadingMsg');
 
         const addModal = document.getElementById('addModal');
         const openAddModalBtn = document.getElementById('openAddModalBtn');
@@ -382,19 +424,17 @@
         let listaCache = [];
 
         async function carregarLista() {
-            syncStatus.textContent = "🔄";
-            try {
-                const response = await fetch(`${WEB_APP_URL}?action=read&t=${Date.now()}`);
-                const data = await response.json();
-                if (Array.isArray(data)) {
-                    listaCache = data;
-                    renderizarLista(listaCache);
-                    syncStatus.textContent = "🔄";
-                } else {
-                    syncStatus.textContent = "❌";
-                }
-            } catch (error) {
-                syncStatus.textContent = "❌";
+            syncStatus.textContent = "🔄 Sincronizando...";
+            const { data, error } = await _supabase.from('lista').select('*').order('created_at', { ascending: false });
+            
+            loadingMsg.style.display = 'none';
+
+            if (!error && data) {
+                listaCache = data;
+                renderizarLista(listaCache);
+                syncStatus.textContent = "⚡ Sincronizado";
+            } else {
+                syncStatus.textContent = "❌ Erro de Conexão";
             }
         }
 
@@ -402,8 +442,14 @@
             itemList.innerHTML = '';
             let valorTotalGeral = 0;
 
+            if (items.length === 0) {
+                itemList.innerHTML = '<p style="text-align:center; color: var(--secondary-text-color); margin-top:20px;">Sua lista está vazia.</p>';
+                totalCompraEl.textContent = "R$ 0,00";
+                return;
+            }
+
             items.forEach((item, index) => {
-                const isChecked = item.checked === true || item.checked === "TRUE" || item.checked === "true";
+                const isChecked = item.checked === true;
                 const qty = parseFloat(item.qty) || 0;
                 const price = parseFloat(item.price) || 0;
                 const subtotal = qty * price;
@@ -430,7 +476,6 @@
                     </div>
                 `;
 
-                // Botão Subir na Lista
                 li.querySelector('.btn-up').addEventListener('click', () => {
                     if (index > 0) {
                         const movedItem = listaCache.splice(index, 1)[0];
@@ -439,7 +484,6 @@
                     }
                 });
 
-                // Botão Descer na Lista
                 li.querySelector('.btn-down').addEventListener('click', () => {
                     if (index < listaCache.length - 1) {
                         const movedItem = listaCache.splice(index, 1)[0];
@@ -449,16 +493,16 @@
                 });
 
                 const checkbox = li.querySelector('.item-check');
-                checkbox.addEventListener('change', () => {
+                checkbox.addEventListener('change', async () => {
                     item.checked = checkbox.checked;
                     renderizarLista(listaCache);
-                    enviarRequisicao({ action: "update", id: item.id, name: item.name, qty: item.qty, price: item.price, checked: checkbox.checked });
+                    await _supabase.from('lista').update({ checked: checkbox.checked }).eq('id', item.id);
                 });
 
-                li.querySelector('.btn-delete').addEventListener('click', () => {
+                li.querySelector('.btn-delete').addEventListener('click', async () => {
                     listaCache = listaCache.filter(i => String(i.id) !== String(item.id));
                     renderizarLista(listaCache);
-                    enviarRequisicao({ action: "delete", id: item.id });
+                    await _supabase.from('lista').delete().eq('id', item.id);
                 });
 
                 li.querySelector('.btn-edit').addEventListener('click', () => {
@@ -487,33 +531,28 @@
             addModal.style.display = 'none';
         });
 
-        saveAddBtn.addEventListener('click', () => {
+        saveAddBtn.addEventListener('click', async () => {
             const name = newModalName.value.trim();
             const qty = parseFloat(newModalQty.value) || 1;
             const price = parseFloat(newModalPrice.value) || 0;
 
             if (name === '') return;
 
-            const newItem = {
-                id: Date.now(),
-                name: name,
-                qty: qty,
-                price: price,
-                checked: false
-            };
-
-            listaCache.push(newItem);
-            renderizarLista(listaCache);
             addModal.style.display = 'none';
+            syncStatus.textContent = "🔄 Salvando...";
 
-            enviarRequisicao({ action: "add", ...newItem });
+            const { data, error } = await _supabase.from('lista').insert([{ name, qty, price, checked: false }]).select();
+            
+            if (!error && data) {
+                carregarLista();
+            }
         });
 
         cancelEditBtn.addEventListener('click', () => {
             editModal.style.display = 'none';
         });
 
-        saveEditBtn.addEventListener('click', () => {
+        saveEditBtn.addEventListener('click', async () => {
             const id = editIdInput.value;
             const name = editNameInput.value.trim();
             const qty = parseFloat(editQtyInput.value) || 1;
@@ -521,38 +560,24 @@
 
             if (name === '') return;
 
-            const item = listaCache.find(i => String(i.id) === String(id));
-            if (item) {
-                item.name = name;
-                item.qty = qty;
-                item.price = price;
-                renderizarLista(listaCache);
-            }
-
             editModal.style.display = 'none';
-            enviarRequisicao({ action: "update", id, name, qty, price, checked: item ? item.checked : false });
+            syncStatus.textContent = "🔄 Atualizando...";
+
+            const { error } = await _supabase.from('lista').update({ name, qty, price }).eq('id', id);
+
+            if (!error) {
+                carregarLista();
+            }
         });
 
-        function enviarRequisicao(payload) {
-            syncStatus.textContent = "🔄";
-            const formData = new URLSearchParams();
-            for (const key in payload) {
-                formData.append(key, payload[key]);
-            }
-
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: formData
-            }).then(() => {
-                syncStatus.textContent = "🔄";
-            }).catch(() => {
-                syncStatus.textContent = "❌";
-            });
-        }
+        _supabase
+            .channel('public:lista')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'lista' }, () => {
+                carregarLista();
+            })
+            .subscribe();
 
         carregarLista();
-        setInterval(carregarLista, 10000);
     </script>
 </body>
 </html>
