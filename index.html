@@ -107,27 +107,23 @@
             background: #111;
             border-radius: 8px;
             user-select: none;
-            transition: background-color 0.25s ease, border-color 0.25s ease, opacity 0.25s ease;
+            transition: border-color 0.2s ease;
         }
 
-        .list-item.dragging {
-            opacity: 0.3;
+        .list-item.dragging-original {
+            opacity: 0.15;
             background: #1a1a2e;
-            border-color: var(--primary-color);
+            border: 1px dashed var(--primary-color);
         }
 
         .drag-handle {
             color: var(--secondary-text-color);
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             cursor: grab;
-            padding: 0 4px;
-            touch-action: none; /* Impede conflitos de scroll ao tocar na alça */
+            padding: 0 6px 0 0;
+            touch-action: none;
             display: flex;
             align-items: center;
-        }
-
-        .drag-handle:active {
-            cursor: grabbing;
         }
 
         .drag-clone {
@@ -138,9 +134,9 @@
             background: #1a1a2e;
             border: 1px solid var(--primary-color);
             border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(106, 90, 205, 0.4);
+            box-shadow: 0 12px 30px rgba(106, 90, 205, 0.5);
             box-sizing: border-box;
-            transform: scale(1.02);
+            transform: scale(1.03);
             transition: none !important;
         }
 
@@ -172,7 +168,7 @@
             font-size: 0.8rem;
             color: var(--secondary-text-color);
             gap: 5px;
-            padding-left: 24px;
+            padding-left: 28px;
         }
 
         .item-check {
@@ -411,6 +407,9 @@
 
         let listaCache = [];
         let draggedIndex = null;
+        let activeClone = null;
+        let touchStartY = 0;
+        let elementInitialTop = 0;
 
         async function carregarLista() {
             syncStatus.textContent = "🔄";
@@ -447,7 +446,7 @@
 
                 li.innerHTML = `
                     <div class="item-row-top">
-                        <span class="drag-handle" title="Segure para arrastar">⋮⋮</span>
+                        <span class="drag-handle" title="Arraste para mover">⋮⋮</span>
                         <input type="checkbox" class="item-check" ${isChecked ? 'checked' : ''}>
                         <span class="item-name">${item.name}</span>
                         <div class="item-actions">
@@ -461,59 +460,24 @@
                     </div>
                 `;
 
-                // --- SISTEMA DE ARRASTO FLUIDO (Estilo Google Keep via Alça) ---
+                // --- SISTEMA DE ARRASTO TOUCH FLUÍDO (Estilo Keep) ---
                 const handle = li.querySelector('.drag-handle');
-                let clone = null;
-                let startY = 0;
-                let initialY = 0;
 
                 handle.addEventListener('touchstart', (e) => {
                     draggedIndex = index;
-                    startY = e.touches[0].clientY;
-                    initialY = li.getBoundingClientRect().top;
-                    
-                    li.classList.add('dragging');
+                    touchStartY = e.touches[0].clientY;
+                    const rect = li.getBoundingClientRect();
+                    elementInitialTop = rect.top;
 
-                    clone = li.cloneNode(true);
-                    clone.className = 'list-clone drag-clone';
-                    clone.style.width = `${li.offsetWidth}px`;
-                    clone.style.left = `${li.getBoundingClientRect().left}px`;
-                    clone.style.top = `${initialY}px`;
-                    document.body.appendChild(clone);
+                    li.classList.add('dragging-original');
+
+                    activeClone = li.cloneNode(true);
+                    activeClone.className = 'list-item drag-clone';
+                    activeClone.style.width = `${rect.width}px`;
+                    activeClone.style.left = `${rect.left}px`;
+                    activeClone.style.top = `${rect.top}px`;
+                    document.body.appendChild(activeClone);
                 }, { passive: true });
-
-                window.addEventListener('touchmove', (e) => {
-                    if (draggedIndex === null || !clone) return;
-                    
-                    const currentY = e.touches[0].clientY;
-                    const deltaY = currentY - startY;
-                    clone.style.top = `${initialY + deltaY}px`;
-
-                    const elemBelow = document.elementFromPoint(window.innerWidth / 2, currentY);
-                    const targetLi = elemBelow ? elemBelow.closest('.list-item') : null;
-
-                    if (targetLi && targetLi !== li) {
-                        const targetIndex = parseInt(targetLi.dataset.index);
-                        if (!isNaN(targetIndex) && targetIndex !== draggedIndex) {
-                            const movedItem = listaCache.splice(draggedIndex, 1)[0];
-                            listaCache.splice(targetIndex, 0, movedItem);
-                            draggedIndex = targetIndex;
-                            renderizarLista(listaCache);
-                        }
-                    }
-                }, { passive: true });
-
-                window.addEventListener('touchend', () => {
-                    if (draggedIndex !== null) {
-                        li.classList.remove('dragging');
-                        if (clone) {
-                            clone.remove();
-                            clone = null;
-                        }
-                        draggedIndex = null;
-                        renderizarLista(listaCache);
-                    }
-                });
 
                 const checkbox = li.querySelector('.item-check');
                 checkbox.addEventListener('change', () => {
@@ -541,6 +505,46 @@
 
             totalCompraEl.textContent = `R$ ${valorTotalGeral.toFixed(2)}`;
         }
+
+        // Eventos globais de movimento para garantir fluidez perfeita sem travar
+        window.addEventListener('touchmove', (e) => {
+            if (draggedIndex === null || !activeClone) return;
+
+            const currentY = e.touches[0].clientY;
+            const deltaY = currentY - touchStartY;
+            activeClone.style.top = `${elementInitialTop + deltaY}px`;
+
+            const elemBelow = document.elementFromPoint(window.innerWidth / 2, currentY);
+            const targetLi = elemBelow ? elemBelow.closest('.list-item') : null;
+
+            if (targetLi && !targetLi.classList.contains('drag-clone')) {
+                const targetIndex = parseInt(targetLi.dataset.index);
+                if (!isNaN(targetIndex) && targetIndex !== draggedIndex) {
+                    const movedItem = listaCache.splice(draggedIndex, 1)[0];
+                    listaCache.splice(targetIndex, 0, movedItem);
+                    draggedIndex = targetIndex;
+                    renderizarLista(listaCache);
+                    
+                    // Reatribui o estilo de arrasto no novo elemento renderizado
+                    const newLi = itemList.children[targetIndex];
+                    if (newLi) {
+                        newLi.classList.add('dragging-original');
+                        elementInitialTop = newLi.getBoundingClientRect().top;
+                    }
+                }
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', () => {
+            if (draggedIndex !== null) {
+                if (activeClone) {
+                    activeClone.remove();
+                    activeClone = null;
+                }
+                draggedIndex = null;
+                renderizarLista(listaCache);
+            }
+        });
 
         openAddModalBtn.addEventListener('click', () => {
             newModalName.value = '';
