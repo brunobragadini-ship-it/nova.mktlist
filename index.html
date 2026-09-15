@@ -120,22 +120,43 @@
             border: 1px solid var(--card-border);
             background: var(--card-bg);
             border-radius: 12px;
-            transition: all 0.2s ease;
+            transition: transform 0.15s ease, background 0.2s ease, opacity 0.2s ease;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            user-select: none;
         }
 
         .list-item:hover {
             border-color: rgba(106, 90, 205, 0.4);
         }
 
+        /* Estilo visual durante o arraste */
+        .list-item.dragging {
+            opacity: 0.4;
+            border: 2px dashed var(--primary-color);
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: var(--secondary-text-color);
+            font-size: 1.2rem;
+            padding: 0 6px;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+            touch-action: none;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
         .item-row-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: 8px;
         }
 
-        /* Ajuste para impedir que o texto das letras fique empilhado */
         .item-name {
             font-size: 1rem;
             flex: 1;
@@ -425,6 +446,7 @@
         const saveEditBtn = document.getElementById('saveEdit');
 
         let listaCache = [];
+        let draggedElement = null;
 
         async function carregarLista() {
             syncStatus.textContent = "🔄 Sincronizando...";
@@ -451,12 +473,11 @@
                 return;
             }
 
-            // Ordena enviando os itens marcados (checked) para o final da lista
             const itensOrdenados = [...items].sort((a, b) => {
                 return (a.checked === true ? 1 : 0) - (b.checked === true ? 1 : 0);
             });
 
-            itensOrdenados.forEach((item, index) => {
+            itensOrdenados.forEach((item) => {
                 const isChecked = item.checked === true;
                 const qty = parseFloat(item.qty) || 0;
                 const price = parseFloat(item.price) || 0;
@@ -466,14 +487,15 @@
 
                 const li = document.createElement('li');
                 li.className = `list-item ${isChecked ? 'checked' : ''}`;
+                li.setAttribute('draggable', 'true');
+                li.dataset.id = item.id;
 
                 li.innerHTML = `
                     <div class="item-row-top">
+                        <span class="drag-handle" title="Segure e arraste para mover">⋮⋮</span>
                         <input type="checkbox" class="item-check" ${isChecked ? 'checked' : ''}>
                         <span class="item-name">${item.name}</span>
                         <div class="item-actions">
-                            <button class="btn-action btn-up" title="Mover para cima">⬆️</button>
-                            <button class="btn-action btn-down" title="Mover para baixo">⬇️</button>
                             <button class="btn-action btn-edit">Editar</button>
                             <button class="btn-action btn-delete">Excluir</button>
                         </div>
@@ -484,26 +506,34 @@
                     </div>
                 `;
 
-                li.querySelector('.btn-up').addEventListener('click', () => {
-                    if (index > 0) {
-                        const movedItem = itensOrdenados.splice(index, 1)[0];
-                        itensOrdenados.splice(index - 1, 0, movedItem);
-                        renderizarLista(itensOrdenados);
-                    }
+                // Eventos Drag & Drop (Mouse/Desktop)
+                li.addEventListener('dragstart', (e) => {
+                    draggedElement = li;
+                    li.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
                 });
 
-                li.querySelector('.btn-down').addEventListener('click', () => {
-                    if (index < itensOrdenados.length - 1) {
-                        const movedItem = itensOrdenados.splice(index, 1)[0];
-                        itensOrdenados.splice(index + 1, 0, movedItem);
-                        renderizarLista(itensOrdenados);
-                    }
+                li.addEventListener('dragend', () => {
+                    draggedElement = null;
+                    li.classList.remove('dragging');
+                });
+
+                // Eventos Touch (Celular)
+                const handle = li.querySelector('.drag-handle');
+                handle.addEventListener('touchstart', () => {
+                    draggedElement = li;
+                    li.classList.add('dragging');
+                }, { passive: true });
+
+                handle.addEventListener('touchend', () => {
+                    draggedElement = null;
+                    li.classList.remove('dragging');
                 });
 
                 const checkbox = li.querySelector('.item-check');
                 checkbox.addEventListener('change', async () => {
                     item.checked = checkbox.checked;
-                    renderizarLista(listaCache); // Move para baixo na tela na hora
+                    renderizarLista(listaCache);
                     await _supabase.from('lista').update({ checked: checkbox.checked }).eq('id', item.id);
                 });
 
@@ -525,6 +555,43 @@
             });
 
             totalCompraEl.textContent = `R$ ${valorTotalGeral.toFixed(2)}`;
+        }
+
+        // Suporte para soltar o item ao arrastar na lista (Desktop e Celular)
+        itemList.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(itemList, e.clientY);
+            if (draggedElement) {
+                if (afterElement == null) {
+                    itemList.appendChild(draggedElement);
+                } else {
+                    itemList.insertBefore(draggedElement, afterElement);
+                }
+            }
+        });
+
+        itemList.addEventListener('touchmove', (e) => {
+            if (!draggedElement) return;
+            const touchLocation = e.touches[0];
+            const afterElement = getDragAfterElement(itemList, touchLocation.clientY);
+            if (afterElement == null) {
+                itemList.appendChild(draggedElement);
+            } else {
+                itemList.insertBefore(draggedElement, afterElement);
+            }
+        });
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.list-item:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
         openAddModalBtn.addEventListener('click', () => {
