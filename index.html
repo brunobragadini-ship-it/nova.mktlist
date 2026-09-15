@@ -132,20 +132,24 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
+            gap: 10px;
         }
 
+        /* CORREÇÃO APLICADA AQUI: Ajuste do comportamento do texto */
         .item-name {
             font-size: 1rem;
             flex: 1;
+            min-width: 0;
             font-weight: 600;
-            word-break: break-word;
+            overflow-wrap: break-word;
+            word-break: normal;
+            hyphens: auto;
         }
 
         .item-actions {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
             flex-shrink: 0;
         }
 
@@ -202,7 +206,7 @@
             border: 1px solid var(--card-border);
             cursor: pointer;
             font-size: 0.8rem;
-            padding: 6px 10px;
+            padding: 5px 8px;
             border-radius: 6px;
             color: var(--text-color);
             transition: background 0.2s;
@@ -394,7 +398,6 @@
     </div>
 
     <script>
-        // CREDENCIAIS DO SUPABASE CONFIGURADAS
         const SUPABASE_URL = 'https://zcyofjnswaozqlfvvhzw.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_sTZuxGBm5sf_mAEopreaUA_hbllL-l1';
 
