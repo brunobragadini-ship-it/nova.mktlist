@@ -135,7 +135,7 @@
             gap: 10px;
         }
 
-        /* CORREÇÃO APLICADA AQUI: Ajuste do comportamento do texto */
+        /* Ajuste para impedir que o texto das letras fique empilhado */
         .item-name {
             font-size: 1rem;
             flex: 1;
@@ -451,7 +451,12 @@
                 return;
             }
 
-            items.forEach((item, index) => {
+            // Ordena enviando os itens marcados (checked) para o final da lista
+            const itensOrdenados = [...items].sort((a, b) => {
+                return (a.checked === true ? 1 : 0) - (b.checked === true ? 1 : 0);
+            });
+
+            itensOrdenados.forEach((item, index) => {
                 const isChecked = item.checked === true;
                 const qty = parseFloat(item.qty) || 0;
                 const price = parseFloat(item.price) || 0;
@@ -481,24 +486,24 @@
 
                 li.querySelector('.btn-up').addEventListener('click', () => {
                     if (index > 0) {
-                        const movedItem = listaCache.splice(index, 1)[0];
-                        listaCache.splice(index - 1, 0, movedItem);
-                        renderizarLista(listaCache);
+                        const movedItem = itensOrdenados.splice(index, 1)[0];
+                        itensOrdenados.splice(index - 1, 0, movedItem);
+                        renderizarLista(itensOrdenados);
                     }
                 });
 
                 li.querySelector('.btn-down').addEventListener('click', () => {
-                    if (index < listaCache.length - 1) {
-                        const movedItem = listaCache.splice(index, 1)[0];
-                        listaCache.splice(index + 1, 0, movedItem);
-                        renderizarLista(listaCache);
+                    if (index < itensOrdenados.length - 1) {
+                        const movedItem = itensOrdenados.splice(index, 1)[0];
+                        itensOrdenados.splice(index + 1, 0, movedItem);
+                        renderizarLista(itensOrdenados);
                     }
                 });
 
                 const checkbox = li.querySelector('.item-check');
                 checkbox.addEventListener('change', async () => {
                     item.checked = checkbox.checked;
-                    renderizarLista(listaCache);
+                    renderizarLista(listaCache); // Move para baixo na tela na hora
                     await _supabase.from('lista').update({ checked: checkbox.checked }).eq('id', item.id);
                 });
 
