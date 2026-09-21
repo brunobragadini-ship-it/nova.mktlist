@@ -74,6 +74,13 @@
             background: rgba(106, 90, 205, 0.15);
             border-radius: 20px;
             border: 1px solid rgba(106, 90, 205, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .sync-status.offline {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
         }
 
         .top-total-bar {
@@ -129,7 +136,6 @@
             border-color: rgba(106, 90, 205, 0.4);
         }
 
-        /* Estilo visual durante o arraste */
         .list-item.dragging {
             opacity: 0.4;
             border: 2px dashed var(--primary-color);
@@ -445,21 +451,93 @@
         const cancelEditBtn = document.getElementById('cancelEdit');
         const saveEditBtn = document.getElementById('saveEdit');
 
-        let listaCache = [];
+        let listaCache = JSON.parse(localStorage.getItem('mklist_cache')) || [];
+        let syncQueue = JSON.parse(localStorage.getItem('mklist_queue')) || [];
         let draggedElement = null;
 
-        async function carregarLista() {
-            syncStatus.textContent = "🔄 Sincronizando...";
-            const { data, error } = await _supabase.from('lista').select('*').order('created_at', { ascending: false });
-            
-            loadingMsg.style.display = 'none';
+        function salvarCacheLocal() {
+            localStorage.setItem('mklist_cache', JSON.stringify(listaCache));
+        }
 
-            if (!error && data) {
-                listaCache = data;
-                renderizarLista(listaCache);
-                syncStatus.textContent = "⚡ Sincronizado";
+        function salvarFilaLocal() {
+            localStorage.setItem('mklist_queue', JSON.stringify(syncQueue));
+        }
+
+        function atualizarStatus(texto, modo = 'normal') {
+            syncStatus.textContent = texto;
+            if (modo === 'offline') {
+                syncStatus.classList.add('offline');
             } else {
-                syncStatus.textContent = "❌ Erro de Conexão";
+                syncStatus.classList.remove('offline');
+            }
+        }
+
+        async function carregarLista() {
+            // Desenhar imediatamente o cache local se existir
+            if (listaCache.length > 0) {
+                loadingMsg.style.display = 'none';
+                renderizarLista(listaCache);
+            }
+
+            if (!navigator.onLine) {
+                atualizarStatus("📡 Modo Offline", "offline");
+                loadingMsg.style.display = 'none';
+                return;
+            }
+
+            atualizarStatus("🔄 Sincronizando...");
+            
+            try {
+                // Tenta processar fila de pendências antes de buscar
+                await processarFilaPendente();
+
+                const { data, error } = await _supabase.from('lista').select('*').order('created_at', { ascending: false });
+                loadingMsg.style.display = 'none';
+
+                if (!error && data) {
+                    listaCache = data;
+                    salvarCacheLocal();
+                    renderizarLista(listaCache);
+                    atualizarStatus("⚡ Sincronizado");
+                } else {
+                    atualizarStatus("📡 Modo Offline (Erro)", "offline");
+                }
+            } catch (err) {
+                loadingMsg.style.display = 'none';
+                atualizarStatus("📡 Modo Offline", "offline");
+            }
+        }
+
+        async function processarFilaPendente() {
+            if (!navigator.onLine || syncQueue.length === 0) return;
+
+            atualizarStatus("🔄 Sincronizando alterações...");
+
+            const filaAtual = [...syncQueue];
+            for (let i = 0; i < filaAtual.length; i++) {
+                const acao = filaAtual[i];
+                try {
+                    if (acao.type === 'INSERT') {
+                        const { data } = await _supabase.from('lista').insert([acao.payload]).select();
+                        if (data && data[0]) {
+                            // Substituir ID temporário pelo ID real do servidor
+                            const index = listaCache.findIndex(item => String(item.id) === String(acao.tempId));
+                            if (index !== -1) {
+                                listaCache[index].id = data[0].id;
+                            }
+                        }
+                    } else if (acao.type === 'UPDATE') {
+                        await _supabase.from('lista').update(acao.payload).eq('id', acao.id);
+                    } else if (acao.type === 'DELETE') {
+                        await _supabase.from('lista').delete().eq('id', acao.id);
+                    }
+                    // Remove da fila após sucesso
+                    syncQueue.shift();
+                    salvarFilaLocal();
+                    salvarCacheLocal();
+                } catch (e) {
+                    break; // Se falhar em algum passo, interrompe
+                }
             }
         }
 
@@ -506,7 +584,7 @@
                     </div>
                 `;
 
-                // Eventos Drag & Drop (Mouse/Desktop)
+                // Drag & Drop
                 li.addEventListener('dragstart', (e) => {
                     draggedElement = li;
                     li.classList.add('dragging');
@@ -518,7 +596,6 @@
                     li.classList.remove('dragging');
                 });
 
-                // Eventos Touch (Celular)
                 const handle = li.querySelector('.drag-handle');
                 handle.addEventListener('touchstart', () => {
                     draggedElement = li;
@@ -530,19 +607,37 @@
                     li.classList.remove('dragging');
                 });
 
+                // Checkbox Event
                 const checkbox = li.querySelector('.item-check');
                 checkbox.addEventListener('change', async () => {
                     item.checked = checkbox.checked;
+                    salvarCacheLocal();
                     renderizarLista(listaCache);
-                    await _supabase.from('lista').update({ checked: checkbox.checked }).eq('id', item.id);
+
+                    if (navigator.onLine) {
+                        await _supabase.from('lista').update({ checked: checkbox.checked }).eq('id', item.id);
+                    } else {
+                        syncQueue.push({ type: 'UPDATE', id: item.id, payload: { checked: checkbox.checked } });
+                        salvarFilaLocal();
+                    }
                 });
 
+                // Delete Event
                 li.querySelector('.btn-delete').addEventListener('click', async () => {
-                    listaCache = listaCache.filter(i => String(i.id) !== String(item.id));
+                    const itemToDeleteId = item.id;
+                    listaCache = listaCache.filter(i => String(i.id) !== String(itemToDeleteId));
+                    salvarCacheLocal();
                     renderizarLista(listaCache);
-                    await _supabase.from('lista').delete().eq('id', item.id);
+
+                    if (navigator.onLine) {
+                        await _supabase.from('lista').delete().eq('id', itemToDeleteId);
+                    } else {
+                        syncQueue.push({ type: 'DELETE', id: itemToDeleteId });
+                        salvarFilaLocal();
+                    }
                 });
 
+                // Edit Event
                 li.querySelector('.btn-edit').addEventListener('click', () => {
                     editIdInput.value = item.id;
                     editNameInput.value = item.name;
@@ -557,7 +652,7 @@
             totalCompraEl.textContent = `R$ ${valorTotalGeral.toFixed(2)}`;
         }
 
-        // Suporte para soltar o item ao arrastar na lista (Desktop e Celular)
+        // Suporte a ordenação no Drag & Drop
         itemList.addEventListener('dragover', (e) => {
             e.preventDefault();
             const afterElement = getDragAfterElement(itemList, e.clientY);
@@ -594,6 +689,7 @@
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
+        // Ações de Adicionar
         openAddModalBtn.addEventListener('click', () => {
             newModalName.value = '';
             newModalQty.value = '';
@@ -614,15 +710,31 @@
             if (name === '') return;
 
             addModal.style.display = 'none';
-            syncStatus.textContent = "🔄 Salvando...";
 
-            const { data, error } = await _supabase.from('lista').insert([{ name, qty, price, checked: false }]).select();
-            
-            if (!error && data) {
-                carregarLista();
+            const tempId = 'temp_' + Date.now();
+            const novoItem = { id: tempId, name, qty, price, checked: false, created_at: new Date().toISOString() };
+
+            listaCache.unshift(novoItem);
+            salvarCacheLocal();
+            renderizarLista(listaCache);
+
+            if (navigator.onLine) {
+                atualizarStatus("🔄 Salvando...");
+                const { data, error } = await _supabase.from('lista').insert([{ name, qty, price, checked: false }]).select();
+                if (!error && data && data[0]) {
+                    novoItem.id = data[0].id;
+                    salvarCacheLocal();
+                    renderizarLista(listaCache);
+                    atualizarStatus("⚡ Sincronizado");
+                }
+            } else {
+                syncQueue.push({ type: 'INSERT', tempId, payload: { name, qty, price, checked: false } });
+                salvarFilaLocal();
+                atualizarStatus("📡 Modo Offline (Pendente)", "offline");
             }
         });
 
+        // Ações de Editar
         cancelEditBtn.addEventListener('click', () => {
             editModal.style.display = 'none';
         });
@@ -636,22 +748,46 @@
             if (name === '') return;
 
             editModal.style.display = 'none';
-            syncStatus.textContent = "🔄 Atualizando...";
 
-            const { error } = await _supabase.from('lista').update({ name, qty, price }).eq('id', id);
+            const itemIndex = listaCache.findIndex(i => String(i.id) === String(id));
+            if (itemIndex !== -1) {
+                listaCache[itemIndex] = { ...listaCache[itemIndex], name, qty, price };
+                salvarCacheLocal();
+                renderizarLista(listaCache);
+            }
 
-            if (!error) {
-                carregarLista();
+            if (navigator.onLine) {
+                atualizarStatus("🔄 Atualizando...");
+                await _supabase.from('lista').update({ name, qty, price }).eq('id', id);
+                atualizarStatus("⚡ Sincronizado");
+            } else {
+                syncQueue.push({ type: 'UPDATE', id, payload: { name, qty, price } });
+                salvarFilaLocal();
+                atualizarStatus("📡 Modo Offline (Pendente)", "offline");
             }
         });
 
+        // Listeners de estado de rede
+        window.addEventListener('online', () => {
+            atualizarStatus("⚡ Conectado! Sincronizando...");
+            carregarLista();
+        });
+
+        window.addEventListener('offline', () => {
+            atualizarStatus("📡 Modo Offline", "offline");
+        });
+
+        // Subscrição Supabase Realtime (Apenas online)
         _supabase
             .channel('public:lista')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'lista' }, () => {
-                carregarLista();
+                if (navigator.onLine && syncQueue.length === 0) {
+                    carregarLista();
+                }
             })
             .subscribe();
 
+        // Inicialização
         carregarLista();
     </script>
 </body>
