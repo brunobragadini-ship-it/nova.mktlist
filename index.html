@@ -572,79 +572,117 @@ main {
 }
 .fab-btn:active { transform: scale(0.94); }
 
-/* ============ MODAIS ============ */
+/* ============ MODAIS (CENTRALIZADOS) ============ */
 .modal-overlay {
     display: none;
     opacity: 0;
     position: fixed;
     inset: 0;
-    background: rgba(3, 3, 8, 0.75);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(3, 3, 8, 0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     z-index: 999;
     justify-content: center;
-    align-items: flex-end;
+    align-items: center;
     transition: opacity 0.28s ease;
-    padding: 0;
+    padding: 20px;
 }
 .modal-overlay[style*="display: flex"] { opacity: 1; }
-@media (min-width: 640px) {
-    .modal-overlay { align-items: center; padding: 20px; }
-}
 
 .modal-content {
-    background: linear-gradient(180deg, #0d0d16 0%, #08080f 100%);
-    padding: 26px 22px 22px;
-    border-radius: 24px 24px 0 0;
-    width: 100%;
-    max-width: 440px;
-    border: 1px solid var(--border-strong);
-    border-bottom: none;
-    transform: translateY(20px);
-    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
-    max-height: 92vh;
-    overflow-y: auto;
+    width: 100%;
+    max-width: 400px;
+    background: linear-gradient(160deg, #121220 0%, #0a0a12 100%);
+    border-radius: 22px;
+    padding: 28px 24px 24px;
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    box-shadow:
+        0 30px 60px -20px rgba(0, 0, 0, 0.9),
+        0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+        0 0 40px -15px var(--primary-glow);
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    animation: modalIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@media (min-width: 640px) {
-    .modal-content {
-        border-radius: 22px;
-        border-bottom: 1px solid var(--border-strong);
-    }
-}
-@keyframes modalIn {
-    from { transform: translateY(30px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    gap: 16px;
+    max-height: 92vh;
+    overflow-y: auto;
+    animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: center center;
 }
 
 .modal-content::before {
     content: '';
     position: absolute;
-    top: 10px;
+    top: -40%;
     left: 50%;
     transform: translateX(-50%);
-    width: 38px;
-    height: 4px;
-    border-radius: 4px;
-    background: rgba(255,255,255,0.12);
+    width: 70%;
+    height: 60%;
+    background: radial-gradient(ellipse at center, rgba(139, 92, 246, 0.28) 0%, transparent 70%);
+    pointer-events: none;
+    filter: blur(30px);
+    z-index: 0;
 }
-@media (min-width: 640px) { .modal-content::before { display: none; } }
+
+@keyframes modalIn {
+    from { transform: translateY(20px) scale(0.94); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* Ícone decorativo no topo do modal */
+.modal-icon {
+    position: relative;
+    z-index: 1;
+    width: 52px;
+    height: 52px;
+    margin: 0 auto;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    box-shadow:
+        0 12px 28px -8px var(--primary-glow),
+        0 0 0 1px rgba(255,255,255,0.1) inset;
+}
+.modal-icon svg { width: 24px; height: 24px; }
+.modal-icon.edit {
+    background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+}
+
+.modal-header-text {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    margin-bottom: 4px;
+}
 
 .modal-content h3 {
+    position: relative;
+    z-index: 1;
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 700;
     letter-spacing: -0.4px;
     color: #fff;
-    margin: 8px 0 8px;
-    text-align: left;
+    margin: 0 0 4px;
+    text-align: center;
+}
+
+.modal-subtitle {
+    position: relative;
+    z-index: 1;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    margin: 0;
+    line-height: 1.4;
 }
 
 .input-group {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -652,34 +690,65 @@ main {
 }
 
 .input-group label {
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 10.5px;
+    font-weight: 700;
     color: var(--text-muted);
-    letter-spacing: 0.6px;
+    letter-spacing: 0.8px;
     text-transform: uppercase;
+    padding-left: 2px;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-wrapper svg.input-icon {
+    position: absolute;
+    left: 13px;
+    width: 15px;
+    height: 15px;
+    color: var(--text-dim);
+    pointer-events: none;
+    transition: color 0.2s;
 }
 
 .input-field {
-    background: rgba(0,0,0,0.4);
+    background: rgba(0, 0, 0, 0.45);
     border: 1px solid var(--border-strong);
     color: #fff;
-    padding: 12px 14px;
-    border-radius: 10px;
+    padding: 13px 14px 13px 38px;
+    border-radius: 11px;
     font-size: 14px;
     font-family: 'Inter', sans-serif;
     width: 100%;
     box-sizing: border-box;
     outline: none;
     transition: all 0.2s;
+    font-weight: 500;
 }
 .input-field:focus {
     border-color: var(--primary);
-    background: rgba(139, 92, 246, 0.05);
+    background: rgba(139, 92, 246, 0.06);
     box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
 }
-.input-field::placeholder { color: var(--text-dim); }
+.input-wrapper:focus-within svg.input-icon {
+    color: var(--primary-light);
+}
+.input-field::placeholder { color: var(--text-dim); font-weight: 400; }
+
+/* Remove setas do input number */
+.input-field[type="number"]::-webkit-outer-spin-button,
+.input-field[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.input-field[type="number"] { -moz-appearance: textfield; }
 
 .modal-buttons {
+    position: relative;
+    z-index: 1;
     display: flex;
     gap: 10px;
     margin-top: 6px;
@@ -687,34 +756,40 @@ main {
 
 .modal-btn {
     flex: 1;
-    padding: 12px 16px;
+    padding: 13px 16px;
     border: none;
-    border-radius: 11px;
+    border-radius: 12px;
     cursor: pointer;
     font-weight: 700;
     font-size: 13.5px;
     font-family: 'Inter', sans-serif;
     transition: all 0.2s;
-    letter-spacing: 0.2px;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 .modal-btn:hover { transform: translateY(-1px); }
 .modal-btn:active { transform: scale(0.98); }
+.modal-btn svg { width: 14px; height: 14px; }
 
 .btn-cancel {
     background: rgba(255,255,255,0.05);
     color: var(--text);
     border: 1px solid var(--border-strong);
+    flex: 0.8;
 }
 .btn-cancel:hover { background: rgba(255,255,255,0.09); }
 
 .btn-save {
-    background: var(--primary);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
     color: #fff;
-    box-shadow: 0 10px 22px -10px var(--primary-glow);
+    box-shadow: 0 12px 24px -10px var(--primary-glow), 0 0 0 1px rgba(255,255,255,0.08) inset;
 }
 .btn-save:hover {
-    background: var(--primary-hover);
-    box-shadow: 0 14px 26px -10px var(--primary-glow);
+    background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%);
+    box-shadow: 0 16px 30px -10px var(--primary-glow), 0 0 0 1px rgba(255,255,255,0.12) inset;
 }
 
 /* ============ ANIMATIONS ============ */
@@ -795,22 +870,57 @@ main {
 <!-- Modal de Adicionar Item -->
 <div class="modal-overlay" id="addModal">
     <div class="modal-content">
-        <h3>Adicionar Item</h3>
+        <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+        </div>
+        <div class="modal-header-text">
+            <h3>Adicionar Item</h3>
+            <p class="modal-subtitle">Preencha os dados abaixo para incluir um novo produto na sua lista.</p>
+        </div>
+
         <div class="input-group">
-            <label>Nome do Item</label>
-            <input type="text" class="input-field" id="newModalName" placeholder="Ex: Arroz" autocomplete="off">
+            <label for="newModalName">Nome do Item</label>
+            <div class="input-wrapper">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                    <line x1="7" y1="7" x2="7.01" y2="7"/>
+                </svg>
+                <input type="text" class="input-field" id="newModalName" placeholder="Ex: Arroz" autocomplete="off">
+            </div>
         </div>
         <div class="input-group">
-            <label>Quantidade</label>
-            <input type="number" step="any" class="input-field" id="newModalQty" placeholder="1">
+            <label for="newModalQty">Quantidade</label>
+            <div class="input-wrapper">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="3"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                </svg>
+                <input type="number" step="any" class="input-field" id="newModalQty" placeholder="1">
+            </div>
         </div>
         <div class="input-group">
-            <label>Valor Unitário (R$)</label>
-            <input type="number" step="any" class="input-field" id="newModalPrice" placeholder="0.00">
+            <label for="newModalPrice">Valor Unitário (R$)</label>
+            <div class="input-wrapper">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"/>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                <input type="number" step="any" class="input-field" id="newModalPrice" placeholder="0.00">
+            </div>
         </div>
+
         <div class="modal-buttons">
             <button class="modal-btn btn-cancel" id="cancelAdd">Cancelar</button>
-            <button class="modal-btn btn-save" id="saveAdd">Adicionar</button>
+            <button class="modal-btn btn-save" id="saveAdd">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Adicionar
+            </button>
         </div>
     </div>
 </div>
@@ -818,23 +928,58 @@ main {
 <!-- Modal de Edição de Item -->
 <div class="modal-overlay" id="editModal">
     <div class="modal-content">
-        <h3>Editar Item</h3>
+        <div class="modal-icon edit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+        </div>
+        <div class="modal-header-text">
+            <h3>Editar Item</h3>
+            <p class="modal-subtitle">Altere as informações do produto e salve as mudanças.</p>
+        </div>
+
         <input type="hidden" id="editId">
         <div class="input-group">
-            <label>Nome do Item</label>
-            <input type="text" class="input-field" id="editName">
+            <label for="editName">Nome do Item</label>
+            <div class="input-wrapper">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                    <line x1="7" y1="7" x2="7.01" y2="7"/>
+                </svg>
+                <input type="text" class="input-field" id="editName">
+            </div>
         </div>
         <div class="input-group">
-            <label>Quantidade</label>
-            <input type="number" step="any" class="input-field" id="editQty">
+            <label for="editQty">Quantidade</label>
+            <div class="input-wrapper">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="3"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                </svg>
+                <input type="number" step="any" class="input-field" id="editQty">
+            </div>
         </div>
         <div class="input-group">
-            <label>Valor Unitário (R$)</label>
-            <input type="number" step="any" class="input-field" id="editPrice">
+            <label for="editPrice">Valor Unitário (R$)</label>
+            <div class="input-wrapper">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"/>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+                <input type="number" step="any" class="input-field" id="editPrice">
+            </div>
         </div>
+
         <div class="modal-buttons">
             <button class="modal-btn btn-cancel" id="cancelEdit">Cancelar</button>
-            <button class="modal-btn btn-save" id="saveEdit">Salvar</button>
+            <button class="modal-btn btn-save" id="saveEdit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Salvar
+            </button>
         </div>
     </div>
 </div>
@@ -1158,7 +1303,7 @@ main {
         newModalQty.value = '';
         newModalPrice.value = '';
         addModal.style.display = 'flex';
-        setTimeout(() => newModalName.focus(), 150);
+        setTimeout(() => newModalName.focus(), 200);
     });
 
     cancelAddBtn.addEventListener('click', () => {
